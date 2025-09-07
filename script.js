@@ -380,7 +380,7 @@ function saveCurrentSession() {
     let duration = timerState.isPaused ? timerState.pausedTime : (endTime - timerState.startTime);
 
     // 最小時間未満の場合は保存しない
-    if (duration < 60000) { // 1分未満
+    if (duration < 1000) { // 1秒未満
         return;
     }
 
@@ -847,14 +847,14 @@ function exportCSV() {
         return;
     }
 
-    const headers = ['日付', 'プロジェクト', 'タスク', '開始時刻', '終了時刻', '作業時間(分)', '作業時間(時:分)'];
+    const headers = ['日付', 'プロジェクト', 'タスク', '開始時刻', '終了時刻', '作業時間(秒)', '作業時間(時:分:秒)'];
     const rows = sessions.map(session => [
         new Date(session.startTime).toLocaleDateString(),
         session.project,
         session.task,
         new Date(session.startTime).toLocaleTimeString(),
         new Date(session.endTime).toLocaleTimeString(),
-        Math.round(session.duration / (1000 * 60)),
+        Math.round(session.duration / 1000),
         formatDuration(session.duration)
     ]);
 
@@ -876,15 +876,15 @@ function exportProjectCSV() {
     const projectStats = calculateProjectStats(sessions);
     const totalDuration = sessions.reduce((sum, session) => sum + session.duration, 0);
 
-    const headers = ['プロジェクト', '合計時間(分)', '合計時間(時:分)', 'セッション数', '平均時間(分)', '平均時間(時:分)', '割合(%)'];
+    const headers = ['プロジェクト', '合計時間(秒)', '合計時間(時:分:秒)', 'セッション数', '平均時間(秒)', '平均時間(時:分:秒)', '割合(%)'];
     const rows = projectStats.map(stats => {
         const percentage = totalDuration > 0 ? (stats.totalDuration / totalDuration * 100).toFixed(1) : 0;
         return [
             stats.project,
-            Math.round(stats.totalDuration / (1000 * 60)),
+            Math.round(stats.totalDuration / 1000),
             formatDuration(stats.totalDuration),
             stats.sessionCount,
-            Math.round(stats.averageDuration / (1000 * 60)),
+            Math.round(stats.averageDuration / 1000),
             formatDuration(stats.averageDuration),
             percentage
         ];
@@ -1234,7 +1234,7 @@ function exportReport() {
         return;
     }
     
-    const csvHeaders = ['期間', 'カテゴリ', 'プロジェクト', 'タスク', '日付', '開始時刻', '終了時刻', '作業時間(分)'];
+    const csvHeaders = ['期間', 'カテゴリ', 'プロジェクト', 'タスク', '日付', '開始時刻', '終了時刻', '作業時間(秒)'];
     const csvRows = currentReport.sessions.map(session => [
         currentReport.period,
         session.category || '開発',
@@ -1243,7 +1243,7 @@ function exportReport() {
         new Date(session.startTime).toLocaleDateString(),
         new Date(session.startTime).toLocaleTimeString(),
         new Date(session.endTime).toLocaleTimeString(),
-        Math.round(session.duration / (1000 * 60))
+        Math.round(session.duration / 1000)
     ]);
     
     const csvContent = [csvHeaders, ...csvRows]
@@ -1266,16 +1266,29 @@ function formatTime(milliseconds) {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
-// 期間のフォーマット (1h 30m)
+// 期間のフォーマット (1h 30m 15s)
 function formatDuration(milliseconds) {
-    const totalMinutes = Math.floor(milliseconds / (1000 * 60));
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
+    const totalSeconds = Math.floor(milliseconds / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
     
     if (hours > 0) {
-        return `${hours}h ${minutes}m`;
+        if (seconds > 0) {
+            return `${hours}h ${minutes}m ${seconds}s`;
+        } else if (minutes > 0) {
+            return `${hours}h ${minutes}m`;
+        } else {
+            return `${hours}h`;
+        }
+    } else if (minutes > 0) {
+        if (seconds > 0) {
+            return `${minutes}m ${seconds}s`;
+        } else {
+            return `${minutes}m`;
+        }
     } else {
-        return `${minutes}m`;
+        return `${seconds}s`;
     }
 }
 
