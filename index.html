@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>時間トラッキングツール</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⏰ 時間トラッキングツール</h1>
+            <p>効率的な時間管理でプロジェクトを成功に導く</p>
+        </header>
+
+        <main>
+            <!-- タイマーセクション -->
+            <section class="timer-section">
+                <div class="timer-card">
+                    <div class="timer-display">
+                        <div class="time-value" id="timerDisplay">00:00:00</div>
+                        <div class="timer-status" id="timerStatus">停止中</div>
+                    </div>
+                    
+                    <div class="project-inputs">
+                        <div class="input-group">
+                            <label for="categoryName">🏷️ カテゴリ</label>
+                            <select id="categoryName">
+                                <option value="開発">💻 開発</option>
+                                <option value="デザイン">🎨 デザイン</option>
+                                <option value="会議">🤝 会議</option>
+                                <option value="学習">📚 学習</option>
+                                <option value="調査">🔍 調査</option>
+                                <option value="メンテナンス">🔧 メンテナンス</option>
+                                <option value="その他">📋 その他</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label for="projectName">📁 プロジェクト名</label>
+                            <input type="text" id="projectName" placeholder="プロジェクト名を入力">
+                        </div>
+                        <div class="input-group">
+                            <label for="taskName">📝 タスク名</label>
+                            <input type="text" id="taskName" placeholder="タスク名を入力">
+                        </div>
+                    </div>
+
+                    <div class="timer-controls">
+                        <div class="primary-controls">
+                            <button id="startBtn" class="btn btn-start" title="開始">
+                                <span class="btn-icon">▶️</span>
+                                <span class="btn-text">開始</span>
+                            </button>
+                            <button id="pauseBtn" class="btn btn-pause" disabled title="一時停止">
+                                <span class="btn-icon">⏸️</span>
+                                <span class="btn-text">一時停止</span>
+                            </button>
+                            <button id="stopBtn" class="btn btn-stop" disabled title="停止">
+                                <span class="btn-icon">⏹️</span>
+                                <span class="btn-text">停止</span>
+                            </button>
+                        </div>
+                        <div class="secondary-controls">
+                            <button id="resetBtn" class="btn btn-reset" title="リセット">
+                                <span class="btn-icon">🔄</span>
+                                <span class="btn-text">リセット</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 現在の作業状況 -->
+            <section class="current-work" id="currentWork" style="display: none;">
+                <div class="status-card">
+                    <h3>📊 現在の作業</h3>
+                    <div class="work-info">
+                        <div class="work-item">
+                            <span class="work-label">プロジェクト:</span>
+                            <span id="currentProject">-</span>
+                        </div>
+                        <div class="work-item">
+                            <span class="work-label">タスク:</span>
+                            <span id="currentTask">-</span>
+                        </div>
+                        <div class="work-item">
+                            <span class="work-label">開始時刻:</span>
+                            <span id="startTime">-</span>
+                        </div>
+                        <div class="work-item">
+                            <span class="work-label">経過時間:</span>
+                            <span id="elapsedTime">00:00:00</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 目標達成度と休憩提案 -->
+                    <div class="work-progress" id="workProgress" style="display: none;">
+                        <div class="progress-item">
+                            <span class="progress-label">今日の目標達成度:</span>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="goalProgress"></div>
+                            </div>
+                            <span id="goalProgressText">0%</span>
+                        </div>
+                        <div class="break-suggestion" id="breakSuggestion" style="display: none;">
+                            <span class="suggestion-icon">☕</span>
+                            <span class="suggestion-text">休憩時間です！少し休憩を取りましょう。</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 目標設定 -->
+            <section class="goals-section">
+                <div class="goals-card">
+                    <h3>🎯 目標設定</h3>
+                    <div class="goals-content">
+                        <div class="goal-input-group">
+                            <label for="dailyGoal">📅 1日の目標時間（時間）</label>
+                            <input type="number" id="dailyGoal" min="0.5" max="24" step="0.5" value="8">
+                        </div>
+                        <div class="goal-input-group">
+                            <label for="workSession">⏱️ 作業セッション時間（分）</label>
+                            <input type="number" id="workSession" min="15" max="180" step="5" value="25">
+                        </div>
+                        <div class="goal-input-group">
+                            <label for="breakReminder">☕ 休憩提案間隔（分）</label>
+                            <input type="number" id="breakReminder" min="15" max="120" step="5" value="60">
+                        </div>
+                        <div class="goals-actions">
+                            <button id="saveGoalsBtn" class="btn btn-primary">💾 設定保存</button>
+                            <button id="resetGoalsBtn" class="btn btn-secondary">🔄 デフォルト</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- プロジェクト別集計 -->
+            <section class="project-summary-section">
+                <div class="project-summary-card">
+                    <div class="summary-header">
+                        <h3>📊 プロジェクト別集計</h3>
+                        <div class="view-controls">
+                            <button id="viewToggle" class="btn btn-secondary">📋 テーブル表示</button>
+                            <select id="summaryPeriod">
+                                <option value="today">今日</option>
+                                <option value="week">今週</option>
+                                <option value="month">今月</option>
+                                <option value="all">全期間</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- プロジェクト別統計テーブル -->
+                    <div class="project-table-container" id="projectTableContainer">
+                        <table class="project-table" id="projectTable">
+                            <thead>
+                                <tr>
+                                    <th>📁 プロジェクト</th>
+                                    <th>⏱️ 合計時間</th>
+                                    <th>📈 セッション数</th>
+                                    <th>⚖️ 平均時間</th>
+                                    <th>📊 割合</th>
+                                </tr>
+                            </thead>
+                            <tbody id="projectTableBody">
+                                <tr>
+                                    <td colspan="5" class="no-data">データがありません</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- プロジェクト別グラフ -->
+                    <div class="project-chart-container" id="projectChartContainer" style="display: none;">
+                        <canvas id="projectChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 作業履歴 -->
+            <section class="history-section">
+                <div class="history-card">
+                    <div class="history-header">
+                        <h3>📋 作業履歴</h3>
+                        <div class="history-controls">
+                            <select id="filterDate">
+                                <option value="today">今日</option>
+                                <option value="week">今週</option>
+                                <option value="month">今月</option>
+                                <option value="all">全期間</option>
+                            </select>
+                            <select id="filterProject">
+                                <option value="all">全プロジェクト</option>
+                            </select>
+                            <button id="historyViewToggle" class="btn btn-secondary">📊 カード表示</button>
+                        </div>
+                    </div>
+                    
+                    <div class="history-summary" id="historySummary">
+                        <div class="summary-item">
+                            <span class="summary-label">総作業時間:</span>
+                            <span id="totalTime">0h 0m</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">セッション数:</span>
+                            <span id="sessionCount">0</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">平均セッション:</span>
+                            <span id="averageSession">0m</span>
+                        </div>
+                    </div>
+
+                    <!-- 履歴テーブル表示 -->
+                    <div class="history-table-container" id="historyTableContainer">
+                        <table class="history-table" id="historyTable">
+                            <thead>
+                                <tr>
+                                    <th>📅 日付</th>
+                                    <th>📁 プロジェクト</th>
+                                    <th>📝 タスク</th>
+                                    <th>⏰ 開始時刻</th>
+                                    <th>⏰ 終了時刻</th>
+                                    <th>⏱️ 作業時間</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTableBody">
+                                <tr>
+                                    <td colspan="6" class="no-data">データがありません</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 履歴カード表示（既存） -->
+                    <div class="history-list" id="historyList" style="display: none;">
+                        <div class="no-data">
+                            まだ作業履歴がありません。<br>
+                            タイマーを開始して作業を記録しましょう！
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 統計・グラフ -->
+            <section class="stats-section">
+                <div class="stats-card">
+                    <div class="stats-header">
+                        <h3>📈 統計・グラフ</h3>
+                        <div class="chart-controls">
+                            <select id="chartType">
+                                <option value="daily">日別統計</option>
+                                <option value="project">プロジェクト別</option>
+                                <option value="task">タスク別</option>
+                                <option value="category">カテゴリ別</option>
+                            </select>
+                            <select id="chartPeriod">
+                                <option value="week">過去7日</option>
+                                <option value="month">過去30日</option>
+                                <option value="all">全期間</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <canvas id="statsChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 週間・月間レポート -->
+            <section class="reports-section">
+                <div class="reports-card">
+                    <div class="reports-header">
+                        <h3>📊 詳細レポート</h3>
+                        <div class="report-controls">
+                            <select id="reportType">
+                                <option value="weekly">📅 週間レポート</option>
+                                <option value="monthly">📆 月間レポート</option>
+                            </select>
+                            <button id="generateReportBtn" class="btn btn-primary">📋 レポート生成</button>
+                            <button id="exportReportBtn" class="btn btn-export">📤 レポート出力</button>
+                        </div>
+                    </div>
+                    
+                    <div class="report-content" id="reportContent">
+                        <div class="no-data">レポートを生成するには「レポート生成」ボタンをクリックしてください</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- データ管理 -->
+            <section class="data-section">
+                <div class="data-card">
+                    <h3>💾 データ管理</h3>
+                    <div class="data-controls">
+                        <div class="export-options">
+                            <button id="exportBtn" class="btn btn-export">
+                                📤 JSONエクスポート
+                            </button>
+                            <button id="exportCsvBtn" class="btn btn-export">
+                                📊 CSVエクスポート
+                            </button>
+                            <button id="exportProjectCsvBtn" class="btn btn-export">
+                                📈 プロジェクト集計CSV
+                            </button>
+                        </div>
+                        <div class="import-options">
+                            <button id="importBtn" class="btn btn-import">
+                                📥 データをインポート
+                            </button>
+                            <input type="file" id="importFile" accept=".json" style="display: none;">
+                        </div>
+                        <div class="danger-options">
+                            <button id="clearBtn" class="btn btn-danger">
+                                🗑️ データを削除
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="data-info">
+                        <div class="info-item">
+                            <span>保存済みセッション数:</span>
+                            <span id="savedSessions">0</span>
+                        </div>
+                        <div class="info-item">
+                            <span>データサイズ:</span>
+                            <span id="dataSize">0 KB</span>
+                        </div>
+                        <div class="info-item">
+                            <span>最終更新:</span>
+                            <span id="lastUpdate">-</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2024 時間トラッキングツール - 効率的な時間管理を支援</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
